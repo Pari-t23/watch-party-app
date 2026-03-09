@@ -1,35 +1,28 @@
 import { useState } from "react"
-import { socket } from "../socket"
 
-function RoomControls({ setRoomId }) {
+function RoomControls({ setRoomId, setRole }) {
 
   const [username, setUsername] = useState("")
-  const [room, setRoom] = useState("")
+  const [roomInput, setRoomInput] = useState("")
 
   const createRoom = () => {
 
-    if (!username || !room) return
+    if (!username) return alert("Enter username")
 
-    socket.emit("create_room", {
-      roomId: room,
-      username
-    })
+    const newRoom = "room-" + Math.floor(Math.random() * 1000)
 
-    setRoomId(room)
-
+    setRole("host")
+    setRoomId(newRoom)
   }
 
   const joinRoom = () => {
 
-    if (!username || !room) return
+    if (!username || !roomInput) {
+      return alert("Enter username and room id")
+    }
 
-    socket.emit("join_room", {
-      roomId: room,
-      username
-    })
-
-    setRoomId(room)
-
+    setRole("participant")
+    setRoomId(roomInput)
   }
 
   return (
@@ -38,30 +31,30 @@ function RoomControls({ setRoomId }) {
 
       <input
         placeholder="Username"
-        className="p-3 rounded-lg outline-none"
+        className="p-2 rounded"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
       />
 
       <input
         placeholder="Room ID"
-        className="p-3 rounded-lg outline-none"
-        value={room}
-        onChange={(e) => setRoom(e.target.value)}
+        className="p-2 rounded"
+        value={roomInput}
+        onChange={(e) => setRoomInput(e.target.value)}
       />
 
       <div className="flex gap-4">
 
         <button
           onClick={createRoom}
-          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg"
+          className="bg-green-500 px-4 py-2 rounded text-white"
         >
           Create Room
         </button>
 
         <button
           onClick={joinRoom}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+          className="bg-blue-500 px-4 py-2 rounded text-white"
         >
           Join Room
         </button>
@@ -69,7 +62,6 @@ function RoomControls({ setRoomId }) {
       </div>
 
     </div>
-
   )
 }
 

@@ -1,10 +1,10 @@
-module.exports = (io) => {
+const rooms = {}
 
-  const rooms = {}
+function socketHandler(io) {
 
   io.on("connection", (socket) => {
 
-    socket.on("join-room", ({ roomId, username }) => {
+    socket.on("join-room", ({ roomId }) => {
 
       socket.join(roomId)
 
@@ -12,43 +12,40 @@ module.exports = (io) => {
         rooms[roomId] = []
       }
 
-      let role = "participant"
-
-      if (rooms[roomId].length === 0) role = "host"
-      else if (rooms[roomId].length === 1) role = "moderator"
-
-      const user = { username, role }
+      const user = {
+        id: socket.id,
+        name: "user" + Math.floor(Math.random() * 100),
+        role: rooms[roomId].length === 0 ? "host" : "participant"
+      }
 
       rooms[roomId].push(user)
 
       io.to(roomId).emit("participants", rooms[roomId])
-    })
 
+      socket.on("disconnect", () => {
+
+        rooms[roomId] = rooms[roomId].filter(
+          (u) => u.id !== socket.id
+        )
+
+        io.to(roomId).emit("participants", rooms[roomId])
+      })
+
+    })
 
     socket.on("play", ({ roomId }) => {
       socket.to(roomId).emit("play")
     })
 
-
     socket.on("pause", ({ roomId }) => {
       socket.to(roomId).emit("pause")
     })
 
-
-    socket.on("seek", ({ roomId, time }) => {
-      socket.to(roomId).emit("seek", { time })
-    })
-
-
     socket.on("change-video", ({ roomId, videoId }) => {
-      io.to(roomId).emit("change-video", { videoId })
-    })
-
-
-    socket.on("disconnect", () => {
-      console.log("user disconnected")
+      socket.to(roomId).emit("change-video", { videoId })
     })
 
   })
-
 }
+
+module.exports = socketHandler

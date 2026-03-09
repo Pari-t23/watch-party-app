@@ -1,28 +1,38 @@
 import { useEffect, useState } from "react"
 import { socket } from "../socket"
 
-function Participants() {
+function Participants({ roomId }) {
 
-  const [participants, setParticipants] = useState([])
+  const [users, setUsers] = useState([])
 
   useEffect(() => {
 
-    socket.on("participants", (users) => {
-      setParticipants(users)
+    socket.emit("join-room", { roomId })
+
+    socket.on("participants", (data) => {
+      setUsers(data)
     })
 
-  }, [])
+    return () => {
+      socket.off("participants")
+    }
+
+  }, [roomId])
 
   return (
 
     <div>
 
-      <h3>Participants</h3>
+      <h2 className="text-lg mb-2">Participants</h2>
 
-      {participants.map((p, i) => (
+      {users.map((user, index) => (
 
-        <div key={i}>
-          {p.username} ({p.role})
+        <div key={index} className="flex justify-between mb-2">
+
+          <span>
+            {user.name} ({user.role})
+          </span>
+
         </div>
 
       ))}
