@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react"
 import { socket } from "../socket"
 
-function VideoPlayer({ roomId, role = "participant" }) {
+function VideoPlayer({ roomId, role }) {
 
   const playerRef = useRef(null)
   const [url, setUrl] = useState("")
-  const [videoId, setVideoId] = useState("dQw4w9WgXcQ")
 
   useEffect(() => {
 
@@ -18,56 +17,26 @@ function VideoPlayer({ roomId, role = "participant" }) {
       playerRef.current = new window.YT.Player("player", {
         height: "450",
         width: "100%",
-        videoId: videoId,
-        playerVars: {
-          autoplay: 0,
-          controls: 1
-        }
+        videoId: "dQw4w9WgXcQ"
       })
     }
 
-    socket.on("play", () => {
-      playerRef.current?.playVideo()
-    })
-
-    socket.on("pause", () => {
-      playerRef.current?.pauseVideo()
-    })
-
-    socket.on("seek", ({ time }) => {
-      playerRef.current?.seekTo(time, true)
-    })
+    socket.on("play", () => playerRef.current?.playVideo())
+    socket.on("pause", () => playerRef.current?.pauseVideo())
 
     socket.on("change-video", ({ videoId }) => {
       playerRef.current?.loadVideoById(videoId)
-      setVideoId(videoId)
     })
-
-    return () => {
-      socket.off("play")
-      socket.off("pause")
-      socket.off("seek")
-      socket.off("change-video")
-    }
 
   }, [])
 
-
   const play = () => {
-
-    playerRef.current?.playVideo()
-
     socket.emit("play", { roomId })
   }
 
-
   const pause = () => {
-
-    playerRef.current?.pauseVideo()
-
     socket.emit("pause", { roomId })
   }
-
 
   const changeVideo = () => {
 
@@ -88,37 +57,46 @@ function VideoPlayer({ roomId, role = "participant" }) {
       videoId: id
     })
 
-    playerRef.current?.loadVideoById(id)
-
     setUrl("")
   }
 
-
   return (
+
     <div>
 
       <div id="player"></div>
 
       {(role === "host" || role === "moderator") && (
-        <div style={{ marginTop: "10px" }}>
+
+        <div className="mt-3 flex gap-2">
+
           <button onClick={play}>▶ Play</button>
           <button onClick={pause}>⏸ Pause</button>
+
         </div>
+
       )}
 
       {(role === "host" || role === "moderator") && (
-        <div style={{ marginTop: "10px" }}>
+
+        <div className="mt-3">
+
           <input
             placeholder="Paste YouTube URL"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={(e)=>setUrl(e.target.value)}
           />
 
-          <button onClick={changeVideo}>Change Video</button>
+          <button onClick={changeVideo}>
+            Change Video
+          </button>
+
         </div>
+
       )}
 
     </div>
+
   )
 }
 

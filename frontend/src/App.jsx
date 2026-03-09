@@ -6,8 +6,6 @@ import Participants from "./components/Participants"
 function App() {
 
   const [roomId, setRoomId] = useState(null)
-
-  // ⭐ FIX
   const [role, setRole] = useState("participant")
 
   return (
@@ -21,27 +19,28 @@ function App() {
         </h1>
 
         {!roomId && (
-          <RoomControls setRoomId={setRoomId} setRole={setRole} />
+          <RoomControls setRoomId={setRoomId}/>
         )}
 
         {roomId && (
           <div className="grid md:grid-cols-3 gap-6">
 
-            {/* Video Section */}
             <div className="md:col-span-2 bg-black/40 rounded-xl p-4">
 
               <h2 className="text-white text-lg mb-2">
                 Room: {roomId}
               </h2>
 
-              <VideoPlayer roomId={roomId} role={role} />
+              <VideoPlayer roomId={roomId} role={role}/>
 
             </div>
 
-            {/* Participants */}
             <div className="bg-white/20 rounded-xl p-4 text-white">
 
-              <Participants roomId={roomId} />
+              <Participants
+                roomId={roomId}
+                setRole={setRole}
+              />
 
             </div>
 
@@ -51,7 +50,6 @@ function App() {
       </div>
 
     </div>
-
   )
 }
 
