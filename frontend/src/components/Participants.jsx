@@ -1,51 +1,40 @@
-import { useEffect, useState } from "react"
+import { useEffect,useState } from "react"
 import { socket } from "../socket"
 
-function Participants({ roomId, setRole }) {
+function Participants({roomId,setRole}){
 
-  const [users, setUsers] = useState([])
+  const [users,setUsers] = useState([])
 
-  useEffect(() => {
+  useEffect(()=>{
 
-    const username = "user" + Math.floor(Math.random() * 100)
+    const username = localStorage.getItem("username")
 
-    socket.emit("join-room", {
-      roomId,
-      username
-    })
+    socket.emit("join-room",{roomId,username})
 
-    socket.on("participants", (data) => {
+    socket.on("participants",(data)=>{
 
       setUsers(data)
 
-      const me = data.find(u => u.id === socket.id)
+      const me = data.find(u=>u.id === socket.id)
 
-      if (me) setRole(me.role)
+      if(me){
+        setRole(me.role)
+      }
 
     })
 
-    return () => {
-      socket.off("participants")
-    }
+  },[roomId])
 
-  }, [roomId])
-
-  return (
+  return(
 
     <div>
 
       <h2 className="text-lg mb-3">Participants</h2>
 
-      {users.map((user) => (
-
-        <div key={user.id} className="flex justify-between mb-2">
-
-          <span>
-            {user.name} ({user.role})
-          </span>
-
+      {users.map((user)=>(
+        <div key={user.id}>
+          {user.name} ({user.role})
         </div>
-
       ))}
 
     </div>
