@@ -1,27 +1,29 @@
 import { useState } from "react"
 
-function RoomControls({ setRoomId, setRole }) {
+function RoomControls({ setRoomId }) {
 
   const [username, setUsername] = useState("")
   const [roomInput, setRoomInput] = useState("")
 
   const createRoom = () => {
 
-    if (!username) return alert("Enter username")
+    if (!username) {
+      alert("Enter username")
+      return
+    }
 
     const newRoom = "room-" + Math.floor(Math.random() * 1000)
 
-    setRole("host")
     setRoomId(newRoom)
   }
 
   const joinRoom = () => {
 
     if (!username || !roomInput) {
-      return alert("Enter username and room id")
+      alert("Enter username and room id")
+      return
     }
 
-    setRole("participant")
     setRoomId(roomInput)
   }
 
