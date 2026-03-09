@@ -7,6 +7,9 @@ function App() {
 
   const [roomId, setRoomId] = useState(null)
 
+  // ⭐ FIX
+  const [role, setRole] = useState("participant")
+
   return (
 
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-indigo-500 to-purple-600 p-6">
@@ -18,7 +21,7 @@ function App() {
         </h1>
 
         {!roomId && (
-          <RoomControls setRoomId={setRoomId} />
+          <RoomControls setRoomId={setRoomId} setRole={setRole} />
         )}
 
         {roomId && (

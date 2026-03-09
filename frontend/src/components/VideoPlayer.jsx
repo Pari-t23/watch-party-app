@@ -18,7 +18,11 @@ function VideoPlayer({ roomId, role = "participant" }) {
       playerRef.current = new window.YT.Player("player", {
         height: "450",
         width: "100%",
-        videoId: videoId
+        videoId: videoId,
+        playerVars: {
+          autoplay: 0,
+          controls: 1
+        }
       })
     }
 
@@ -36,7 +40,15 @@ function VideoPlayer({ roomId, role = "participant" }) {
 
     socket.on("change-video", ({ videoId }) => {
       playerRef.current?.loadVideoById(videoId)
+      setVideoId(videoId)
     })
+
+    return () => {
+      socket.off("play")
+      socket.off("pause")
+      socket.off("seek")
+      socket.off("change-video")
+    }
 
   }, [])
 
@@ -59,55 +71,55 @@ function VideoPlayer({ roomId, role = "participant" }) {
 
   const changeVideo = () => {
 
-  let id = ""
+    let id = ""
 
-  if (url.includes("youtube.com")) {
-    id = url.split("v=")[1]?.split("&")[0]
+    if (url.includes("youtube.com")) {
+      id = url.split("v=")[1]?.split("&")[0]
+    }
+
+    if (url.includes("youtu.be")) {
+      id = url.split("youtu.be/")[1]
+    }
+
+    if (!id) return
+
+    socket.emit("change-video", {
+      roomId,
+      videoId: id
+    })
+
+    playerRef.current?.loadVideoById(id)
+
+    setUrl("")
   }
-
-  if (url.includes("youtu.be")) {
-    id = url.split("youtu.be/")[1]
-  }
-
-  if (!id) return
-
-  socket.emit("change-video", {
-    roomId,
-    videoId: id
-  })
-
-  setUrl("")
-}
 
 
   return (
-  <div>
+    <div>
 
-    <div id="player"></div>
+      <div id="player"></div>
 
-    {(role === "host" || role === "moderator") && (
-      <div style={{ marginTop: "10px" }}>
-        <button onClick={play}>▶ Play</button>
-        <button onClick={pause}>⏸ Pause</button>
-      </div>
-    )}
+      {(role === "host" || role === "moderator") && (
+        <div style={{ marginTop: "10px" }}>
+          <button onClick={play}>▶ Play</button>
+          <button onClick={pause}>⏸ Pause</button>
+        </div>
+      )}
 
-    {(role === "host" || role === "moderator") && (
-      <div style={{ marginTop: "10px" }}>
+      {(role === "host" || role === "moderator") && (
+        <div style={{ marginTop: "10px" }}>
+          <input
+            placeholder="Paste YouTube URL"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+          />
 
-        <input
-          placeholder="Paste YouTube URL"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-        />
+          <button onClick={changeVideo}>Change Video</button>
+        </div>
+      )}
 
-        <button onClick={changeVideo}>Change Video</button>
-
-      </div>
-    )}
-
-  </div>
-)
+    </div>
+  )
 }
 
 export default VideoPlayer
