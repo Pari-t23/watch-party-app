@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { socket } from "../socket"
 
-function VideoPlayer({ roomId, role }) {
+function VideoPlayer({ roomId, role = "participant" }) {
 
   const playerRef = useRef(null)
   const [url, setUrl] = useState("")
