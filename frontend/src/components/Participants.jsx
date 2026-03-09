@@ -7,50 +7,110 @@ function Participants({ roomId }) {
 
   useEffect(() => {
 
-    const handleParticipants = (data) => {
+    socket.on("participants", (data) => {
       setUsers(data)
-    }
+    })
 
-    socket.on("participants", handleParticipants)
+    return () => socket.off("participants")
 
-    return () => {
-      socket.off("participants", handleParticipants)
-    }
+  }, [])
 
-  }, [roomId])
+
+
+  const changeRole = (socketId, role) => {
+
+    socket.emit("change_role", {
+      roomId,
+      targetSocketId: socketId,
+      role
+    })
+
+  }
+
+
+  const removeUser = (socketId) => {
+
+    socket.emit("remove_participant", {
+      roomId,
+      targetSocketId: socketId
+    })
+
+  }
+
+
 
   return (
 
     <div>
 
-      <h3 className="text-lg font-semibold mb-4">
-        👥 Participants
-      </h3>
+      <h3>Participants</h3>
 
-      <ul className="space-y-2">
+      {users.map((user, index) => (
 
-        {users.map((user, index) => (
+        <div
+          key={index}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "10px"
+          }}
+        >
 
-          <li
-            key={index}
-            className="bg-white/20 p-2 rounded-lg flex justify-between"
-          >
+          <span>
+            {user.username} ({user.role})
+          </span>
 
-            <span>{user.username}</span>
 
-            <span className="text-xs bg-indigo-500 px-2 py-1 rounded">
-              {user.role}
-            </span>
+          <div style={{ display: "flex", gap: "8px" }}>
 
-          </li>
+            {user.role !== "host" && (
 
-        ))}
+              <select
+                value={user.role}
+                onChange={(e) => changeRole(user.socketId, e.target.value)}
+                style={{
+                  padding: "3px",
+                  borderRadius: "4px"
+                }}
+              >
 
-      </ul>
+                <option value="participant">Participant</option>
+                <option value="moderator">Moderator</option>
+
+              </select>
+
+            )}
+
+
+            {user.role !== "host" && (
+
+              <button
+                onClick={() => removeUser(user.socketId)}
+                style={{
+                  background: "#ff4d4d",
+                  border: "none",
+                  padding: "4px 8px",
+                  borderRadius: "4px",
+                  color: "white",
+                  cursor: "pointer"
+                }}
+              >
+                Remove
+              </button>
+
+            )}
+
+          </div>
+
+        </div>
+
+      ))}
 
     </div>
 
   )
+
 }
 
 export default Participants

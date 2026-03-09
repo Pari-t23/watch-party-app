@@ -4,10 +4,12 @@ import { socket } from "../socket"
 function VideoPlayer({ roomId }) {
 
   const playerRef = useRef(null)
-  const [videoId, setVideoId] = useState("dQw4w9WgXcQ")
+
   const [url, setUrl] = useState("")
 
-  // Load YouTube Player
+
+
+  // LOAD YOUTUBE PLAYER
   useEffect(() => {
 
     const tag = document.createElement("script")
@@ -17,61 +19,113 @@ function VideoPlayer({ roomId }) {
     window.onYouTubeIframeAPIReady = () => {
 
       playerRef.current = new window.YT.Player("player", {
+
         height: "390",
         width: "640",
-        videoId: videoId
+        videoId: "dQw4w9WgXcQ",
+
+        events: {
+
+          onReady: () => {
+            console.log("Player Ready")
+          },
+
+          onStateChange: () => {
+
+            if (!playerRef.current) return
+
+            const time = playerRef.current.getCurrentTime()
+
+            socket.emit("seek", {
+              roomId,
+              time
+            })
+
+          }
+
+        }
+
       })
 
     }
 
-  }, [videoId])
+  }, [roomId])
 
-  // SOCKET LISTENERS
+
+
+  // SOCKET EVENTS
   useEffect(() => {
 
     socket.on("play", () => {
-      playerRef.current?.playVideo()
-    })
-
-    socket.on("pause", () => {
-      playerRef.current?.pauseVideo()
-    })
-
-    socket.on("seek", (time) => {
-      playerRef.current?.seekTo(time, true)
-    })
-
-    socket.on("change_video", (id) => {
-
-      setVideoId(id)
 
       if (playerRef.current) {
-        playerRef.current.loadVideoById(id)
+        playerRef.current.playVideo()
       }
 
     })
 
+
+    socket.on("pause", () => {
+
+      if (playerRef.current) {
+        playerRef.current.pauseVideo()
+      }
+
+    })
+
+
+    socket.on("seek", (time) => {
+
+      if (playerRef.current) {
+        playerRef.current.seekTo(time, true)
+      }
+
+    })
+
+
+    socket.on("change_video", (videoId) => {
+
+      if (playerRef.current) {
+        playerRef.current.loadVideoById(videoId)
+      }
+
+    })
+
+
     return () => {
+
       socket.off("play")
       socket.off("pause")
       socket.off("seek")
       socket.off("change_video")
+
     }
 
   }, [])
 
+
+
+  // CHANGE VIDEO
   const changeVideo = () => {
 
-    const id = url.split("v=")[1]
+    try {
 
-    if (!id) return
+      const videoId = new URL(url).searchParams.get("v")
 
-    socket.emit("change_video", {
-      roomId,
-      videoId: id
-    })
+      if (!videoId) return
+
+      socket.emit("change_video", {
+        roomId,
+        videoId
+      })
+
+    } catch {
+      alert("Invalid YouTube URL")
+    }
 
   }
+
+
 
   return (
 
@@ -83,15 +137,23 @@ function VideoPlayer({ roomId }) {
 
       <br />
 
-      <button onClick={() => socket.emit("play", { roomId })}>
+
+      <button
+        onClick={() => socket.emit("play", { roomId })}
+      >
         ▶ Play
       </button>
 
-      <button onClick={() => socket.emit("pause", { roomId })}>
+
+      <button
+        onClick={() => socket.emit("pause", { roomId })}
+      >
         ⏸ Pause
       </button>
 
+
       <br /><br />
+
 
       <input
         placeholder="Paste YouTube URL"
@@ -99,13 +161,16 @@ function VideoPlayer({ roomId }) {
         onChange={(e) => setUrl(e.target.value)}
       />
 
+
       <button onClick={changeVideo}>
         Change Video
       </button>
 
+
     </div>
 
   )
+
 }
 
 export default VideoPlayer

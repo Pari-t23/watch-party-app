@@ -1,46 +1,52 @@
 const rooms = {}
 
-function createRoom(roomId, socketId, username) {
+function createRoom(roomId, username, socketId) {
 
-  rooms[roomId] = {
-    users: [
-      {
-        socketId,
-        username,
-        role: "host"
-      }
-    ]
+  if (!rooms[roomId]) {
+    rooms[roomId] = {
+      users: []
+    }
   }
+
+  rooms[roomId].users.push({
+    username,
+    socketId,
+    role: "host"
+  })
 
 }
 
-function joinRoom(roomId, socketId, username) {
+function joinRoom(roomId, username, socketId) {
 
   if (!rooms[roomId]) return
 
-  const users = rooms[roomId].users
+  const role = rooms[roomId].users.length === 1 ? "moderator" : "participant"
 
-  let role = "participant"
-
-  // second user = moderator
-  if (users.length === 1) {
-    role = "moderator"
-  }
-
-  users.push({
-    socketId,
+  rooms[roomId].users.push({
     username,
+    socketId,
     role
   })
 
 }
 
 function getUsers(roomId) {
-  return rooms[roomId]?.users || []
+  if (!rooms[roomId]) return []
+  return rooms[roomId].users
+}
+
+function getUser(roomId, socketId) {
+
+  const room = rooms[roomId]
+  if (!room) return null
+
+  return room.users.find(u => u.socketId === socketId)
+
 }
 
 module.exports = {
   createRoom,
   joinRoom,
-  getUsers
+  getUsers,
+  getUser
 }

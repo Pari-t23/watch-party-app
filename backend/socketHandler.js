@@ -1,27 +1,14 @@
-const { createRoom, joinRoom, getUsers, getUser, promoteUser } = require("./roomManager")
+const { createRoom, joinRoom, getUsers, getUser } = require("./roomManager")
 
-function socketHandler(io){
+function socketHandler(io) {
 
-  io.on("connection",(socket)=>{
+  io.on("connection", (socket) => {
 
-    console.log("User connected:",socket.id)
+    console.log("User connected:", socket.id)
 
-    // CREATE ROOM
-    socket.on("create_room",({roomId, username})=>{
+    socket.on("create_room", ({ roomId, username }) => {
 
-      createRoom(roomId, socket.id, username)
-
-      socket.join(roomId)
-
-      io.to(roomId).emit("participants", getUsers(roomId))
-
-    })
-
-
-    // JOIN ROOM
-    socket.on("join_room",({roomId, username})=>{
-
-      joinRoom(roomId, socket.id, username)
+      createRoom(roomId, username, socket.id)
 
       socket.join(roomId)
 
@@ -30,87 +17,113 @@ function socketHandler(io){
     })
 
 
-    // PLAY VIDEO (Host / Moderator)
+    socket.on("join_room", ({ roomId, username }) => {
+
+      joinRoom(roomId, username, socket.id)
+
+      socket.join(roomId)
+
+      io.to(roomId).emit("participants", getUsers(roomId))
+
+    })
+
+
+    // PLAY
     socket.on("play", ({ roomId }) => {
 
-      const users = getUsers(roomId)
-        const user = users.find(u => u.socketId === socket.id)
+      const user = getUser(roomId, socket.id)
+      if (!user) return
 
-         if (user.role === "host" || user.role === "moderator") {
-          socket.to(roomId).emit("play")
-        }
+      if (user.role === "host" || user.role === "moderator") {
+        io.to(roomId).emit("play")
+      }
 
     })
-    
-    //PAUSE VIDEO (Host / Moderator)
+
+
+    // PAUSE
     socket.on("pause", ({ roomId }) => {
 
-      const users = getUsers(roomId)
-       const user = users.find(u => u.socketId === socket.id)
+      const user = getUser(roomId, socket.id)
+      if (!user) return
 
-         if (user.role === "host" || user.role === "moderator") {
-          socket.to(roomId).emit("pause")
+      if (user.role === "host" || user.role === "moderator") {
+        io.to(roomId).emit("pause")
+      }
+
+    })
+
+
+    // SEEK
+    socket.on("seek", ({ roomId, time }) => {
+
+      const user = getUser(roomId, socket.id)
+      if (!user) return
+
+      if (user.role === "host" || user.role === "moderator") {
+        io.to(roomId).emit("seek", time)
+      }
+
+    })
+
+
+    // CHANGE VIDEO
+    socket.on("change_video", ({ roomId, videoId }) => {
+
+      const user = getUser(roomId, socket.id)
+      if (!user) return
+
+      if (user.role === "host") {
+        io.to(roomId).emit("change_video", videoId)
+      }
+
+    })
+
+
+    // CHANGE ROLE
+    socket.on("change_role", ({ roomId, targetSocketId, role }) => {
+
+      const user = getUser(roomId, socket.id)
+      if (!user) return
+
+      if (user.role === "host") {
+
+        const users = getUsers(roomId)
+
+        const targetUser = users.find(u => u.socketId === targetSocketId)
+
+        if (targetUser) {
+          targetUser.role = role
         }
 
-    })
-
-
-    // SEEK VIDEO (Host / Moderator)
-    socket.on("seek",({roomId,time})=>{
-
-      const user = getUser(roomId, socket.id)
-
-      if(!user) return
-
-      if(user.role === "host" || user.role === "moderator"){
-        io.to(roomId).emit("seek",time)
-      }
-
-    })
-
-
-    // CHANGE VIDEO (Host only)
-    socket.on("change_video",({roomId,videoId})=>{
-
-      const user = getUser(roomId, socket.id)
-
-      if(!user) return
-
-      if(user.role === "host"){
-        io.to(roomId).emit("change_video",videoId)
-      }
-
-    })
-
-
-    // PROMOTE MODERATOR (Host only)
-    socket.on("promote_moderator",({roomId, socketId})=>{
-
-      const user = getUser(roomId, socket.id)
-
-      if(!user) return
-
-      if(user.role === "host"){
-
-        promoteUser(roomId, socketId)
-
-        io.to(roomId).emit("participants", getUsers(roomId))
+        io.to(roomId).emit("participants", users)
 
       }
 
     })
 
-    socket.on("seek", ({roomId, time}) => {
 
-       const user = getUser(roomId, socket.id)
+    // REMOVE PARTICIPANT
+    socket.on("remove_participant", ({ roomId, targetSocketId }) => {
 
-        if(!user) return
+      const user = getUser(roomId, socket.id)
+      if (!user) return
 
-         if(user.role === "host" || user.role === "moderator"){
+      if (user.role === "host") {
 
-          io.to(roomId).emit("seek", time)
+        const users = getUsers(roomId)
 
-         }
+        const index = users.findIndex(u => u.socketId === targetSocketId)
+
+        if (index !== -1) {
+          users.splice(index, 1)
+        }
+
+        io.to(roomId).emit("participants", users)
+
+        io.to(targetSocketId).emit("removed")
+
+      }
 
     })
 
