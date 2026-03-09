@@ -109,12 +109,6 @@ Participant
 
 ---
 
-##  Screenshots
-
-(Add screenshots of your project UI here)
-
----
-
 ##  Author
 
 **Pari Tiwari**
