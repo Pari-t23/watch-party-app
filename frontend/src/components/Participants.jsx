@@ -7,7 +7,10 @@ function Participants({ roomId }) {
 
   useEffect(() => {
 
-    socket.emit("join-room", { roomId })
+    socket.emit("join-room", {
+  roomId,
+  username: "user" + Math.floor(Math.random() * 100)
+})
 
     socket.on("participants", (data) => {
       setUsers(data)

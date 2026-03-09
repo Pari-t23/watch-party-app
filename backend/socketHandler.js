@@ -4,7 +4,9 @@ function socketHandler(io) {
 
   io.on("connection", (socket) => {
 
-    socket.on("join-room", ({ roomId }) => {
+    console.log("User connected:", socket.id)
+
+    socket.on("join-room", ({ roomId, username }) => {
 
       socket.join(roomId)
 
@@ -12,10 +14,18 @@ function socketHandler(io) {
         rooms[roomId] = []
       }
 
+      let role = "participant"
+
+      if (rooms[roomId].length === 0) {
+        role = "host"
+      } else if (rooms[roomId].length === 1) {
+        role = "moderator"
+      }
+
       const user = {
         id: socket.id,
-        name: "user" + Math.floor(Math.random() * 100),
-        role: rooms[roomId].length === 0 ? "host" : "participant"
+        name: username || "user",
+        role: role
       }
 
       rooms[roomId].push(user)
@@ -41,8 +51,14 @@ function socketHandler(io) {
       socket.to(roomId).emit("pause")
     })
 
+    socket.on("seek", ({ roomId, time }) => {
+      socket.to(roomId).emit("seek", { time })
+    })
+
     socket.on("change-video", ({ roomId, videoId }) => {
-      socket.to(roomId).emit("change-video", { videoId })
+
+      io.to(roomId).emit("change-video", { videoId })
+
     })
 
   })
