@@ -1,135 +1,54 @@
-const { createRoom, joinRoom, getUsers, getUser } = require("./roomManager")
+module.exports = (io) => {
 
-function socketHandler(io) {
+  const rooms = {}
 
   io.on("connection", (socket) => {
 
-    console.log("User connected:", socket.id)
-
-    socket.on("create_room", ({ roomId, username }) => {
-
-      createRoom(roomId, username, socket.id)
+    socket.on("join-room", ({ roomId, username }) => {
 
       socket.join(roomId)
 
-      io.to(roomId).emit("participants", getUsers(roomId))
+      if (!rooms[roomId]) {
+        rooms[roomId] = []
+      }
 
+      let role = "participant"
+
+      if (rooms[roomId].length === 0) role = "host"
+      else if (rooms[roomId].length === 1) role = "moderator"
+
+      const user = { username, role }
+
+      rooms[roomId].push(user)
+
+      io.to(roomId).emit("participants", rooms[roomId])
     })
 
 
-    socket.on("join_room", ({ roomId, username }) => {
-
-      joinRoom(roomId, username, socket.id)
-
-      socket.join(roomId)
-
-      io.to(roomId).emit("participants", getUsers(roomId))
-
-    })
-
-
-    // PLAY
     socket.on("play", ({ roomId }) => {
-
-      const user = getUser(roomId, socket.id)
-      if (!user) return
-
-      if (user.role === "host" || user.role === "moderator") {
-        io.to(roomId).emit("play")
-      }
-
+      socket.to(roomId).emit("play")
     })
 
 
-    // PAUSE
     socket.on("pause", ({ roomId }) => {
-
-      const user = getUser(roomId, socket.id)
-      if (!user) return
-
-      if (user.role === "host" || user.role === "moderator") {
-        io.to(roomId).emit("pause")
-      }
-
+      socket.to(roomId).emit("pause")
     })
 
 
-    // SEEK
     socket.on("seek", ({ roomId, time }) => {
-
-      const user = getUser(roomId, socket.id)
-      if (!user) return
-
-      if (user.role === "host" || user.role === "moderator") {
-        io.to(roomId).emit("seek", time)
-      }
-
+      socket.to(roomId).emit("seek", { time })
     })
 
 
-    // CHANGE VIDEO
-    socket.on("change_video", ({ roomId, videoId }) => {
-
-      const user = getUser(roomId, socket.id)
-      if (!user) return
-
-      if (user.role === "host") {
-        io.to(roomId).emit("change_video", videoId)
-      }
-
+    socket.on("change-video", ({ roomId, videoId }) => {
+      io.to(roomId).emit("change-video", { videoId })
     })
 
 
-    // CHANGE ROLE
-    socket.on("change_role", ({ roomId, targetSocketId, role }) => {
-
-      const user = getUser(roomId, socket.id)
-      if (!user) return
-
-      if (user.role === "host") {
-
-        const users = getUsers(roomId)
-
-        const targetUser = users.find(u => u.socketId === targetSocketId)
-
-        if (targetUser) {
-          targetUser.role = role
-        }
-
-        io.to(roomId).emit("participants", users)
-
-      }
-
+    socket.on("disconnect", () => {
+      console.log("user disconnected")
     })
-
-
-    // REMOVE PARTICIPANT
-    socket.on("remove_participant", ({ roomId, targetSocketId }) => {
-
-      const user = getUser(roomId, socket.id)
-      if (!user) return
-
-      if (user.role === "host") {
-
-        const users = getUsers(roomId)
-
-        const index = users.findIndex(u => u.socketId === targetSocketId)
-
-        if (index !== -1) {
-          users.splice(index, 1)
-        }
-
-        io.to(roomId).emit("participants", users)
-
-        io.to(targetSocketId).emit("removed")
-
-      }
-
-    })
-
 
   })
 
 }
-
-module.exports = socketHandler
