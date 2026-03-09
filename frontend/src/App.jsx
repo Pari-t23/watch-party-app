@@ -31,7 +31,7 @@ function App() {
                 Room: {roomId}
               </h2>
 
-              <VideoPlayer roomId={roomId} />
+              <VideoPlayer roomId={roomId} role={role} />
 
             </div>
 

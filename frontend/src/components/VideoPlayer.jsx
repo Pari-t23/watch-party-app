@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { socket } from "../socket"
 
-function VideoPlayer({ roomId }) {
+function VideoPlayer({ roomId, role }) {
 
   const playerRef = useRef(null)
   const [url, setUrl] = useState("")
@@ -59,30 +59,42 @@ function VideoPlayer({ roomId }) {
 
   const changeVideo = () => {
 
-    const id = url.split("v=")[1]?.split("&")[0]
+  let id = ""
 
-    if (!id) return
-
-    socket.emit("change-video", {
-      roomId,
-      videoId: id
-    })
-
-    setUrl("")
+  if (url.includes("youtube.com")) {
+    id = url.split("v=")[1]?.split("&")[0]
   }
+
+  if (url.includes("youtu.be")) {
+    id = url.split("youtu.be/")[1]
+  }
+
+  if (!id) return
+
+  socket.emit("change-video", {
+    roomId,
+    videoId: id
+  })
+
+  setUrl("")
+}
 
 
   return (
-    <div>
+  <div>
 
-      <div id="player"></div>
+    <div id="player"></div>
 
+    {(role === "host" || role === "moderator") && (
       <div style={{ marginTop: "10px" }}>
         <button onClick={play}>▶ Play</button>
         <button onClick={pause}>⏸ Pause</button>
       </div>
+    )}
 
+    {(role === "host" || role === "moderator") && (
       <div style={{ marginTop: "10px" }}>
+
         <input
           placeholder="Paste YouTube URL"
           value={url}
@@ -90,10 +102,12 @@ function VideoPlayer({ roomId }) {
         />
 
         <button onClick={changeVideo}>Change Video</button>
-      </div>
 
-    </div>
-  )
+      </div>
+    )}
+
+  </div>
+)
 }
 
 export default VideoPlayer
